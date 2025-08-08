@@ -1,0 +1,44 @@
+# local testing, references
+/py
+
+# .NET build artifacts
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+*.cache
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# .NET packages
+packages/
+*.nupkg
+*.snupkg
+
+# Test results and coverage
+TestResults/
+*.trx
+*.coverage
+coverage.xml
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Environment and secrets
+.env
+.env.*
+appsettings.Production.json
+appsettings.Staging.json
+
+# Logs
+*.log
+logs/
+
+# Publish output
+publish/
