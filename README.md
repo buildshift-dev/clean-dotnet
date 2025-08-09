@@ -66,9 +66,6 @@ clean-dotnet/
 ### One-Command Setup
 
 ```bash
-# Setup local development environment
-make setup-dev
-
 # Build and test the project
 make build
 make test
@@ -101,9 +98,11 @@ make run-watch
    ```
 
 4. **Access the application**
-   - **API**: http://localhost:5000
-   - **Swagger UI**: http://localhost:5000/swagger
-   - **Health Check**: http://localhost:5000/health
+   - **API**: http://localhost:5000 (native) or http://localhost:8080 (Docker)
+   - **Swagger UI**: http://localhost:5000/swagger or http://localhost:8080
+   - **Health Check**: http://localhost:5000/health or http://localhost:8080/health
+
+> **🍎 Mac Silicon Note**: For local development, use `make run` (native). For testing deployment containers, see the [Mac Silicon Docker section](#-mac-silicon-m1m2m3-local-docker) below.
 
 ## API Endpoints
 
@@ -135,8 +134,6 @@ make run-https             # Start with HTTPS
 ```bash
 make format                # Format code with dotnet format
 make lint                  # Run code analysis
-make security              # Run security analysis
-make pre-commit            # Run all pre-commit checks
 ```
 
 ### Docker Operations
@@ -145,14 +142,33 @@ make docker-build          # Build Docker image (linux/amd64)
 make docker-run            # Run in Docker container (port 8080)
 ```
 
-### AWS Deployment (Optional)
-See [cloudformation/README.md](cloudformation/README.md) for deployment options including automated make commands and manual step-by-step instructions.
-
+#### 🍎 Mac Silicon (M1/M2/M3) Local Docker
 ```bash
-export AWS_REGION=us-east-1
-export ECR_REPO=clean-architecture-dotnet
-make deploy                # Full AWS deployment
+# Option 1: Run natively (fastest for local testing)
+make run                   # Native .NET development server
+
+# Option 2: Docker with platform emulation (slower but tests deployment)
+docker run --rm -p 8080:8080 \
+  --platform linux/amd64 \
+  $(make docker-build-name 2>/dev/null || echo "clean-architecture-dotnet")
+
+# Option 3: Build and test deployment-ready container
+dotnet publish src/WebApi/WebApi.csproj -c Release -o ./publish
+docker build --platform linux/amd64 -f Dockerfile.prebuild -t clean-dotnet-local .
+docker run --rm -p 8080:8080 clean-dotnet-local
+
+# Test the containerized API
+curl http://localhost:8080/health        # Health check
+open http://localhost:8080               # Swagger UI (macOS)
 ```
+
+**Why different approaches?**
+- **Native (`make run`)**: Fastest for development, runs on ARM64
+- **Emulated Docker**: Tests the actual deployment container on your Mac  
+- **Prebuild Docker**: Exactly what gets deployed to AWS (no emulation issues)
+
+### AWS Deployment (Optional)
+See [cloudformation/README.md](cloudformation/README.md) for complete deployment instructions for Mac Silicon and Cloud9/AMD64 platforms.
 
 ## Testing Strategy
 
@@ -272,7 +288,7 @@ This project was migrated from a Python FastAPI implementation, demonstrating eq
 ### Development Workflow
 1. **Fork** the repository
 2. **Create** feature branch: `git checkout -b feature/amazing-feature`
-3. **Run** quality checks: `make pre-commit`
+3. **Run** quality checks: `make format && make lint && make test`
 4. **Commit** changes: `git commit -m 'Add amazing feature'`
 5. **Push** to branch: `git push origin feature/amazing-feature`
 6. **Open** Pull Request

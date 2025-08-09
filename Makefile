@@ -1,6 +1,6 @@
 # Makefile for Clean Architecture .NET
 
-.PHONY: help restore build clean test test-unit test-integration run lint format run-watch docker-build docker-run deploy-local troubleshoot check-env setup-dev deploy diagnostic-tools install-diagnostic-tools tools-list
+.PHONY: help restore build clean test test-unit test-integration test-coverage run run-watch run-https lint format docker-build docker-run publish troubleshoot check-env
 
 # .NET executable path (auto-detect or fallback)
 DOTNET := $(shell which dotnet 2>/dev/null || echo "/opt/homebrew/Cellar/dotnet@8/8.0.119/bin/dotnet")
@@ -183,111 +183,28 @@ publish: ## Publish application for deployment
 # AWS deployment targets
 # REMOVED: deploy-ecr command - use 'make deploy' or cloudformation/build-and-deploy.sh instead
 
-deploy-cloudformation: ## Deploy CloudFormation stacks
-	@echo "☁️  Deploying CloudFormation stacks..."
-	@if [ -z "$(AWS_REGION)" ]; then \
-		echo "❌ Set AWS_REGION environment variable"; \
-		exit 1; \
-	fi
-	@echo "Deploying ECR repository..."
-	aws cloudformation deploy --template-file cloudformation/ecr.yaml --stack-name clean-arch-ecr --region $(AWS_REGION)
-	@echo "Deploying VPC and ALB..."
-	aws cloudformation deploy --template-file cloudformation/vpc-alb.yaml --stack-name clean-arch-vpc-alb --region $(AWS_REGION)
-	@echo "✅ Infrastructure deployed!"
-	@echo "Now run: make deploy"
-	@echo "Then deploy ECS: aws cloudformation deploy --template-file cloudformation/ecs-fargate.yaml --stack-name clean-arch-ecs --region $(AWS_REGION)"
+# REMOVED: deploy-cloudformation - use cloudformation/README.md for step-by-step instructions
 
 # Development quality checks
-security: ## Run security analysis (basic checks)
-	@echo "🔒 Running security analysis..."
-	@echo "Checking for hardcoded secrets..."
-	@if grep -r "password\|secret\|token\|key" src/ --include="*.cs" --include="*.json" | grep -v "// " | grep -v "/// "; then \
-		echo "⚠️  Potential hardcoded secrets found above"; \
-	else \
-		echo "✅ No obvious hardcoded secrets found"; \
-	fi
-	@echo "For comprehensive security scanning, consider:"
-	@echo "  • SonarQube: https://www.sonarqube.org/"
-	@echo "  • DevSkim: https://github.com/Microsoft/DevSkim"
+# REMOVED: security - basic security checks removed for demo simplicity
 
-dependency-check: ## Check for vulnerable NuGet packages
-	@echo "🔍 Checking for vulnerable packages..."
-	@if command -v dotnet-list-outdated >/dev/null 2>&1; then \
-		$(DOTNET) list package --vulnerable --include-transitive; \
-	else \
-		echo "Install: dotnet tool install --global dotnet-outdated-tool"; \
-		echo "Then run: dotnet outdated"; \
-	fi
-	@echo "Consider using: dotnet list package --outdated"
+# REMOVED: dependency-check - requires optional tools, simplified for demo
 
 # REMOVED: outdated command - requires optional dotnet-outdated-tool
 
 # REMOVED: script command - requires optional dotnet-script tool
 
-diagnostic-tools: ## Show installed diagnostic tools and usage
-	@echo "🔬 .NET Diagnostic Tools:"
-	@echo "========================"
-	@echo ""
-	@if command -v dotnet-counters >/dev/null 2>&1; then \
-		echo "✅ dotnet-counters: Performance monitoring"; \
-		echo "   Usage: dotnet counters monitor --process-id <pid>"; \
-		echo "   Or:    dotnet counters monitor --name WebApi"; \
-	else \
-		echo "❌ dotnet-counters not installed"; \
-	fi
-	@echo ""
-	@if command -v dotnet-dump >/dev/null 2>&1; then \
-		echo "✅ dotnet-dump: Memory dump analysis"; \
-		echo "   Usage: dotnet dump collect --process-id <pid>"; \
-		echo "   Analyze: dotnet dump analyze <dump-file>"; \
-	else \
-		echo "❌ dotnet-dump not installed"; \
-	fi
-	@echo ""
-	@if command -v dotnet-trace >/dev/null 2>&1; then \
-		echo "✅ dotnet-trace: Performance tracing"; \
-		echo "   Usage: dotnet trace collect --process-id <pid>"; \
-		echo "   Or:    dotnet trace collect --name WebApi"; \
-	else \
-		echo "❌ dotnet-trace not installed"; \
-	fi
-	@echo ""
-	@echo "To install all diagnostic tools:"
-	@echo "  make install-diagnostic-tools"
+# REMOVED: diagnostic-tools - optional tools not essential for demo
 
-install-diagnostic-tools: ## Install .NET diagnostic tools
-	@echo "🔧 Installing .NET diagnostic tools..."
-	@echo "Installing dotnet-counters..."
-	@dotnet tool install --global dotnet-counters || echo "dotnet-counters already installed"
-	@echo "Installing dotnet-dump..."
-	@dotnet tool install --global dotnet-dump || echo "dotnet-dump already installed"
-	@echo "Installing dotnet-trace..."
-	@dotnet tool install --global dotnet-trace || echo "dotnet-trace already installed"
-	@echo "✅ Diagnostic tools installation complete!"
+# REMOVED: install-diagnostic-tools - optional tools not essential for demo
 
-tools-list: ## List all installed .NET global tools
-	@echo "🛠️  Installed .NET Global Tools:"
-	@echo "================================"
-	@dotnet tool list --global || echo "No global tools installed"
+# REMOVED: tools-list - optional, not essential for demo
 
 # Pre-commit style checks
-pre-commit: format lint test-unit ## Run all pre-commit checks
+# REMOVED: pre-commit - use individual commands: format, lint, test
 
 # CI pipeline simulation  
-ci: ## Simulate CI pipeline
-	@echo "=== Checking environment ==="
-	make check-env
-	@echo "=== Restoring packages ==="
-	make restore
-	@echo "=== Building solution ==="
-	make build
-	@echo "=== Running linting ==="
-	make lint
-	@echo "=== Running tests ==="
-	make test
-	@echo "=== Security checks ==="
-	make security
-	@echo "=== All CI checks passed! ==="
+# REMOVED: ci - use individual commands for demo simplicity
 
 check-env: ## Check development environment
 	@echo "🔧 Checking .NET environment..."
@@ -351,28 +268,16 @@ troubleshoot: ## Comprehensive troubleshooting guide
 	@echo "  • Run container: make docker-run"
 	@echo ""
 	@echo "📋 AWS Deployment:"
-	@echo "  • Set environment: export AWS_REGION=us-east-1 ECR_REPO=my-repo"
-	@echo "  • Deploy infrastructure: make deploy-cloudformation"
-	@echo "  • Deploy application: make deploy"
+	@echo "  • See cloudformation/README.md for deployment instructions"
 	@echo ""
 	@echo "📋 Development Tools:"
 	@echo "  • Hot reload: make run-watch"
 	@echo "  • HTTPS mode: make run-https"
 	@echo "  • Code coverage: make test-coverage"
-	@echo "  • Security check: make security"
+	@echo "  • Format code: make format"
 
-setup-dev: ## Setup local development environment
-	@echo "🔧 Setting up local development environment..."
-	@./scripts/dev-setup.sh --no-run
-	@echo "✅ Development environment setup complete!"
+# REMOVED: setup-dev - use 'make restore && make build' instead
 
 # REMOVED: setup-environment - manual setup required for .NET 8, see project documentation
 
-deploy: ## Deploy to AWS (requires AWS CLI and Docker)
-	@echo "🚀 Deploying to AWS..."
-	@if [ -f "./scripts/deploy-aws.sh" ]; then \
-		./scripts/deploy-aws.sh; \
-	else \
-		echo "❌ Deployment script not found: ./scripts/deploy-aws.sh"; \
-		exit 1; \
-	fi
+# REMOVED: deploy - use cloudformation/README.md for manual deployment instructions

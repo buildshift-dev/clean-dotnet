@@ -22,9 +22,6 @@ For production deployment to AWS cloud infrastructure.
 
 ### Quick Start
 ```bash
-# Setup development environment
-make setup-dev
-
 # Start with hot reload
 make run-watch
 
@@ -76,20 +73,13 @@ make docker-run             # Run container on port 8080
 
 **📖 For complete AWS deployment instructions, choose:**
 
-#### Option 1: Automated (Make Commands)
-```bash
-export AWS_REGION=us-east-1
-export ECR_REPO=clean-architecture-dotnet
-make deploy
-```
+#### Simple CloudFormation Deployment
+See **[cloudformation/README.md](../cloudformation/README.md)** for complete deployment instructions.
 
-#### Option 2: Manual Step-by-Step
-See **[cloudformation/manual-deployment.md](../cloudformation/manual-deployment.md)** for detailed instructions.
-
-**Recommended for:**
-- Apple Silicon (M1/M2) Mac users experiencing Docker platform issues
-- Learning the deployment process step-by-step  
-- Troubleshooting deployment problems
+**Platform-specific approaches:**
+- **Mac Silicon (M1/M2/M3)**: Uses prebuild approach to avoid emulation issues
+- **Cloud9/AMD64**: Uses standard Docker build process
+- **Both platforms**: Deploy to identical ECS Fargate infrastructure
 
 ### AWS Architecture Components
 - **ECR**: Container image registry
@@ -99,16 +89,15 @@ See **[cloudformation/manual-deployment.md](../cloudformation/manual-deployment.
 
 ### Platform Considerations
 
-**Intel/AMD Systems**: Use automated make commands
-**Apple Silicon Systems**: Use manual deployment guide for platform-specific Docker build instructions
+**Intel/AMD Systems**: Standard CloudFormation deployment  
+**Apple Silicon Systems**: Prebuild approach for cross-platform compatibility
 
 ---
 
 ## 📚 Additional Resources
 
 ### Detailed Deployment Guides
-- **[cloudformation/README.md](../cloudformation/README.md)** - AWS deployment options overview
-- **[cloudformation/manual-deployment.md](../cloudformation/manual-deployment.md)** - Detailed step-by-step AWS deployment
+- **[cloudformation/README.md](../cloudformation/README.md)** - Complete AWS deployment instructions for all platforms
 
 ### Architecture Documentation  
 - **[patterns/aws-logging-patterns.md](patterns/aws-logging-patterns.md)** - Environment-specific logging

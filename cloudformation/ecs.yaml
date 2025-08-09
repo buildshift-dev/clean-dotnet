@@ -1,0 +1,122 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Simple ECS Fargate service for .NET API - minimal configuration'
+
+Parameters:
+  EnvironmentName:
+    Description: Environment name
+    Type: String
+    Default: dev
+  
+  ApplicationName:
+    Description: Application name
+    Type: String
+    Default: cleanarch
+
+  ImageURI:
+    Description: ECR image URI to deploy
+    Type: String
+
+Resources:
+  # ECS Cluster
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub '${EnvironmentName}-${ApplicationName}-cluster'
+
+  # CloudWatch Log Group
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/ecs/${EnvironmentName}-${ApplicationName}'
+      RetentionInDays: 7
+
+  # Simple Task Execution Role
+  TaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+  # Simple Task Definition
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub '${EnvironmentName}-${ApplicationName}'
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: 256
+      Memory: 512
+      ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
+      ContainerDefinitions:
+        - Name: api
+          Image: !Ref ImageURI
+          Essential: true
+          PortMappings:
+            - ContainerPort: 8080
+              Protocol: tcp
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
+          Environment:
+            - Name: ASPNETCORE_ENVIRONMENT
+              Value: Production
+            - Name: ASPNETCORE_URLS
+              Value: http://+:8080
+
+  # Simple ECS Service
+  ECSService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: !Sub '${EnvironmentName}-${ApplicationName}-service'
+      Cluster: !Ref ECSCluster
+      TaskDefinition: !Ref TaskDefinition
+      LaunchType: FARGATE
+      DesiredCount: 1
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          SecurityGroups:
+            - Fn::ImportValue: !Sub '${EnvironmentName}-${ApplicationName}-ECSSecurityGroup'
+          Subnets:
+            - !Select 
+              - 0
+              - !Split 
+                - ","
+                - Fn::ImportValue: !Sub '${EnvironmentName}-${ApplicationName}-PrivateSubnets'
+            - !Select 
+              - 1
+              - !Split 
+                - ","
+                - Fn::ImportValue: !Sub '${EnvironmentName}-${ApplicationName}-PrivateSubnets'
+          AssignPublicIp: DISABLED
+      LoadBalancers:
+        - TargetGroupArn:
+            Fn::ImportValue: !Sub '${EnvironmentName}-${ApplicationName}-APITargetGroup'
+          ContainerName: api
+          ContainerPort: 8080
+
+Outputs:
+  ECSCluster:
+    Description: ECS Cluster Name
+    Value: !Ref ECSCluster
+
+  ECSService:
+    Description: ECS Service Name  
+    Value: !Sub '${EnvironmentName}-${ApplicationName}-service'
+
+  APIURL:
+    Description: .NET API URL
+    Value: !Sub
+      - 'http://${ALBDNSName}/'
+      - ALBDNSName:
+          Fn::ImportValue: !Sub '${EnvironmentName}-${ApplicationName}-ALB-DNS'
